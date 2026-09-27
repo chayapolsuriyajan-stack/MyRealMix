@@ -1,0 +1,52 @@
+<!doctype html>
+<!-- UI preview: mounts the real bubble.js with sample data. Serve the repo root and open /dev/preview.html -->
+<html>
+<head>
+<meta charset="utf-8">
+<title>MyRealMix UI preview</title>
+<style>
+  body { margin: 0; background: #030303; color: #fff; font-family: Roboto, system-ui, sans-serif; height: 100vh; overflow: hidden; }
+  .fake { display: grid; grid-template-columns: 1fr 480px; height: 100%; }
+  .art { margin: 40px; border-radius: 8px; background: radial-gradient(circle at 30% 30%, #3b2a6b, #0b0b1a 70%); }
+  .q { padding: 24px; }
+  .q div { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid #222; font-size: 14px; }
+  .q i { width: 40px; height: 40px; background: #333; border-radius: 4px; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; height: 72px; background: #212121; }
+</style>
+</head>
+<body>
+<div class="fake"><div class="art"></div><div class="q" id="q"></div></div>
+<div class="bar"></div>
+<script type="module">
+  globalThis.chrome = { runtime: { getURL: (p) => `/${p}` } };
+  const { createUI } = await import('/src/content/ui/bubble.js');
+  const { merge, planBlend } = await import('/src/core/blend.js');
+
+  const q = ['Merry Christmas Mr. Lawrence', 'Aoneko no Torso', '一人で大丈夫にならなきゃ', 'hitori', '鸟之诗(钢琴版)', 'in the pool', 'Chamber of Reflection', 'From a Place of Love', 'Late Road'];
+  document.getElementById('q').innerHTML = q.map((t) => `<div><i></i>${t}</div>`).join('');
+  const t = (title, artist) => ({ videoId: title, title, artists: [artist], duration: '3:1' + (title.length % 10), thumb: '' });
+  const upcoming = [t('hitori', 'Hideyuki Hashimoto'), t('鸟之诗(钢琴版)', 'StarryPiano'), t('in the pool', 'kensuke ushio'), t('Chamber of Reflection', 'Your Anxiety Buddy'), t('From a Place of Love', 'Mili'), t('Late Road', 'muunroo'), t('Rain', 'Ryuichi Sakamoto'), t('Opus', 'Ryuichi Sakamoto')];
+  const cands = [t('Always With You', 'Evan Call'), t('Never Coming Back', 'Evan Call'), t('Violet Snow', 'Evan Call'), t('The Voice in My Heart', 'Evan Call')];
+
+  const ui = createUI(new Proxy({}, { get: (_, k) => (...a) => { console.log(k, ...a); if (k === 'onRatio') show(a[0]); if (k === 'onLearned') learned(); } }));
+  const show = (ratio) => {
+    const plan = planBlend({ upcoming, candidates: cands, ratio, rng: () => 0.5 });
+    ui.showPreview({ text: 'violet evergarden', rows: merge(upcoming, plan), count: plan.length, ratio, label: 'Violet Evergarden' });
+  };
+  const learned = () => ui.showLearned({
+    liked: [{ name: 'Ryuichi Sakamoto', w: 6.2 }, { name: 'Evan Call', w: 4.1 }, { name: 'kensuke ushio', w: 1.4 }],
+    disliked: [{ name: 'Your Anxiety Buddy', w: -2.3 }],
+    seeds: [{ name: 'Violet Evergarden', w: 2 }, { name: 'Ghibli piano', w: 1 }],
+  });
+  ui.setAI('available');
+  ui.setSuggestions(['more like this', 'Violet Evergarden', 'a little Ghibli piano', 'more Ryuichi Sakamoto']);
+  ui.setSession('Violet Evergarden · medium');
+  const mode = new URLSearchParams(location.search).get('state');
+  ui.open();
+  if (mode === 'preview') { document.querySelector('myrealmix-root'); setTimeout(() => show('medium'), 50); }
+  if (mode === 'learned') setTimeout(learned, 50);
+  if (mode === 'closed') { ui.close(); ui.toast('Blended 3 Violet Evergarden tracks into Up Next', { undo: true }); }
+  window.ui = ui;
+</script>
+</body>
+</html>

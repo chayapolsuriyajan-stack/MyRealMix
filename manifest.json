@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "MyRealMix",
+  "version": "0.1.0",
+  "description": "Steer YouTube Music's Up Next: blend in what you want, at a dose you choose, with an on-device AI helper that learns your taste.",
+  "minimum_chrome_version": "138",
+  "permissions": ["storage", "offscreen"],
+  "host_permissions": ["https://music.youtube.com/*"],
+  "background": { "service_worker": "src/background.js", "type": "module" },
+  "content_scripts": [
+    {
+      "matches": ["https://music.youtube.com/*"],
+      "js": ["src/content/bridge.js"],
+      "world": "MAIN",
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://music.youtube.com/*"],
+      "js": ["src/content/loader.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/content/*", "src/content/ui/*", "src/core/*"],
+      "matches": ["https://music.youtube.com/*"]
+    }
+  ]
+}
